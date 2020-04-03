@@ -1,10 +1,14 @@
 import { readFileSync, readdirSync } from "fs";
 import { join } from "path";
-import parsePolicy from "./parser";
 
-const files = readdirSync(join(__dirname, "/policies"))
-  .filter((file) => file.endsWith(".arbac"))
-  .map((file) => join(__dirname, "policies/" + file));
+import parsePolicy from "./parser";
+import isReachable from "./analyzer";
+
+// const files = readdirSync(join(__dirname, "/policies"))
+//   .filter((file) => file.endsWith(".arbac"))
+//   .map((file) => join(__dirname, "policies/" + file));
+
+const files = ["policies/example.arbac"];
 
 const readtFiles = files.map((file) => ({
   name: file,
@@ -19,4 +23,6 @@ const parsedFiles = readtFiles.map(({ name, content }) => {
   }
 });
 
-console.log(JSON.stringify(parsedFiles, null, 2));
+console.log(JSON.stringify(parsedFiles[0], null, 2));
+
+console.log(isReachable(parsedFiles[0]));
