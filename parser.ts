@@ -1,20 +1,3 @@
-export type PathToken =
-  | { type: "literal"; id: string; negated?: boolean }
-  | { type: "TRUE" }
-  | { type: "FALSE" };
-
-function parsePathToken(token: string): PathToken {
-  if (token === "TRUE") {
-    return { type: "TRUE" };
-  } else if (token === "FALSE") {
-    return { type: "FALSE" };
-  } else if (token.startsWith("-")) {
-    return { type: "literal", id: token.substr(1), negated: true };
-  } else {
-    return { type: "literal", id: token };
-  }
-}
-
 export type Policy = {
   roles: string[];
   users: string[];
@@ -22,7 +5,8 @@ export type Policy = {
   canRevoke: { roleAdmin: string; roleToRevoke: string }[];
   canAssign: {
     roleAdmin: string;
-    conditions: PathToken[];
+    positiveConditions: string[];
+    negativeConditions: string[];
     roleToAssign: string;
   }[];
   goal: string;
@@ -77,7 +61,13 @@ export default function parsePolicy(data: string): Policy {
           const [fst, mid, snd] = uae.split(",");
           return {
             roleAdmin: fst.substr(1),
-            conditions: mid.split("&").map(parsePathToken),
+            positiveConditions: mid
+              .split("&")
+              .filter((tok) => !tok.startsWith("-")),
+            negativeConditions: mid
+              .split("&")
+              .filter((tok) => tok.startsWith("-"))
+              .map((tok) => tok.substr(1)),
             roleToAssign: snd.substr(0, snd.length - 1),
           };
         });
