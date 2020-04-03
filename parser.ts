@@ -1,6 +1,5 @@
 export type PathToken =
-  | { type: "negation"; child: PathToken }
-  | { type: "literal"; id: string }
+  | { type: "literal"; id: string; negated?: boolean }
   | { type: "TRUE" }
   | { type: "FALSE" };
 
@@ -10,7 +9,7 @@ function parsePathToken(token: string): PathToken {
   } else if (token === "FALSE") {
     return { type: "FALSE" };
   } else if (token.startsWith("-")) {
-    return { type: "negation", child: parsePathToken(token.substr(1)) };
+    return { type: "literal", id: token.substr(1), negated: true };
   } else {
     return { type: "literal", id: token };
   }
@@ -19,9 +18,13 @@ function parsePathToken(token: string): PathToken {
 export type Policy = {
   roles: string[];
   users: string[];
-  userRoles: { userA: string; roleB: string }[];
-  canRevoke: { roleA: string; roleB: string }[];
-  canAssign: { roleA: string; path: PathToken[]; roleT: string }[];
+  userRoles: { user: string; role: string }[];
+  canRevoke: { roleAdmin: string; roleToRevoke: string }[];
+  canAssign: {
+    roleAdmin: string;
+    conditions: PathToken[];
+    roleToAssign: string;
+  }[];
   goal: string;
 };
 
@@ -50,7 +53,7 @@ export default function parsePolicy(data: string): Policy {
         .filter((t) => t.length > 0)
         .map((uae) => {
           const [fst, snd] = uae.split(",");
-          return { userA: fst.substr(1), roleB: snd.substr(0, snd.length - 1) };
+          return { user: fst.substr(1), role: snd.substr(0, snd.length - 1) };
         });
     } else if (line.startsWith("CR")) {
       policy.canRevoke = line
@@ -60,7 +63,10 @@ export default function parsePolicy(data: string): Policy {
         .filter((t) => t.length > 0)
         .map((uae) => {
           const [fst, snd] = uae.split(",");
-          return { roleA: fst.substr(1), roleB: snd.substr(0, snd.length - 1) };
+          return {
+            roleAdmin: fst.substr(1),
+            roleToRevoke: snd.substr(0, snd.length - 1),
+          };
         });
     } else if (line.startsWith("CA")) {
       policy.canAssign = line
@@ -70,9 +76,9 @@ export default function parsePolicy(data: string): Policy {
         .map((uae) => {
           const [fst, mid, snd] = uae.split(",");
           return {
-            roleA: fst.substr(1),
-            path: mid.split("&").map(parsePathToken),
-            roleT: snd.substr(0, snd.length - 1),
+            roleAdmin: fst.substr(1),
+            conditions: mid.split("&").map(parsePathToken),
+            roleToAssign: snd.substr(0, snd.length - 1),
           };
         });
     } else if (line.startsWith("Goal")) {
