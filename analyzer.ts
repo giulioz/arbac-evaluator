@@ -106,6 +106,28 @@ function joinSteps(tried: RolesSet[]): RolesSet[] {
   return out;
 }
 
+function backwardSlicing(policy: Policy) {
+  const S = [policy.goal];
+  for (let index = 0; index < 100; index++) {
+    policy.canAssign.forEach(rule => {
+      if (S.find(s => s === rule.roleToAssign)) {
+        S.push(rule.roleAdmin);
+        rule.negativeConditions.forEach(r => S.push(r));
+        rule.positiveConditions.forEach(r => S.push(r));
+      }
+    });
+  }
+
+  policy.canAssign = policy.canAssign.filter(r =>
+    S.find(s => s === r.roleToAssign)
+  );
+  policy.canRevoke = policy.canRevoke.filter(r =>
+    S.find(s => s === r.roleToRevoke)
+  );
+
+  return policy;
+}
+
 // Try all the possible combinations
 function bruteForce(initialRoles: RolesSet, policy: Policy) {
   // All the tried combinations
@@ -199,7 +221,9 @@ function bruteForce(initialRoles: RolesSet, policy: Policy) {
 }
 
 export default function isReachable(policy: Policy) {
-  const initialRoles = buildInitialRoles(policy);
+  const slicedPolicy = backwardSlicing(policy)
 
-  return bruteForce(initialRoles, policy);
+  const initialRoles = buildInitialRoles(slicedPolicy);
+
+  return bruteForce(initialRoles, slicedPolicy);
 }
