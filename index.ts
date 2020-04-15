@@ -4,16 +4,18 @@ import { join } from "path";
 import parsePolicy from "./parser";
 import isReachable from "./analyzer";
 
-// const files = readdirSync(join(__dirname, "/policies"))
-//   .filter((file) => file.endsWith(".arbac"))
-//   .map((file) => join(__dirname, "policies/" + file));
+// Find all the possible valid files
+const files = readdirSync(join(__dirname, "/policies"))
+  .filter(file => file.startsWith("policy") && file.endsWith(".arbac"))
+  .map(file => join(__dirname, "policies/" + file));
 
-const files = ["policies/example.arbac"];
-
-const readtFiles = files.map((file) => ({
+// Read all the files content
+const readtFiles = files.map(file => ({
   name: file,
-  content: readFileSync(file, "utf8"),
+  content: readFileSync(file, "utf8")
 }));
+
+// Parses all the file
 const parsedFiles = readtFiles.map(({ name, content }) => {
   try {
     return parsePolicy(content);
@@ -23,6 +25,8 @@ const parsedFiles = readtFiles.map(({ name, content }) => {
   }
 });
 
-console.log(JSON.stringify(parsedFiles[0], null, 2));
+// Change the index to choose the file to analyze:
+const toParse = parsedFiles[3];
 
-console.log(isReachable(parsedFiles[0]));
+// Logs if it's reachable or not
+console.log(isReachable(toParse) ? "REACHABLE!" : "NOT REACHABLE");
