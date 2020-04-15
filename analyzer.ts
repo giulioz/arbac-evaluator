@@ -95,8 +95,8 @@ function rolesEqual(a: RolesSet, b: RolesSet) {
 }
 
 // Join two roles set arrays
-function joinSteps(tried: RolesSet[]) {
-  const out = [];
+function joinSteps(tried: RolesSet[]): RolesSet[] {
+  const out: RolesSet[] = [];
   tried.forEach(t => {
     if (!out.find(r => rolesEqual(t, r))) {
       out.push(t);
@@ -111,8 +111,9 @@ function bruteForce(initialRoles: RolesSet, policy: Policy) {
   // All the tried combinations
   let tried: RolesSet[] = [initialRoles];
 
-  // We will use a break to exit
-  while (true) {
+  let found = false;
+
+  while (!found) {
     const newTries: RolesSet[] = [];
 
     tried.forEach(rolesSet => {
@@ -163,7 +164,14 @@ function bruteForce(initialRoles: RolesSet, policy: Policy) {
               revoke.roleToRevoke
             );
 
-            if (withRevocation) {
+            // check that at least one user has a role
+            const hasEmptyUsers =
+              withRevocation &&
+              Object.keys(withRevocation).every(
+                key => withRevocation[key].length === 0
+              );
+
+            if (withRevocation && !hasEmptyUsers) {
               newTries.push(withRevocation);
             }
           });
@@ -180,12 +188,14 @@ function bruteForce(initialRoles: RolesSet, policy: Policy) {
     );
 
     if (hasReachedTargetState) {
-      return true;
+      found = true;
     }
 
     // Updated the tries so far
     tried = joinSteps([...tried, ...newTries]);
   }
+
+  return found;
 }
 
 export default function isReachable(policy: Policy) {

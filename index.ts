@@ -26,7 +26,7 @@ const parsedFiles = readtFiles.map(({ name, content }) => {
 });
 
 // Change the index to choose the file to analyze:
-const toParse = parsedFiles[3];
+const toParse = parsedFiles[2];
 
 // Logs if it's reachable or not
 console.log(isReachable(toParse) ? "REACHABLE!" : "NOT REACHABLE");
